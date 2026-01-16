@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EXPERIENCIAH - Better Together</title>
+  <style>
+    :root{
+      --bg:#07030f;
+      --panel: rgba(10, 6, 18, 0.55);
+      --panel2: rgba(18, 10, 32, 0.55);
+      --stroke: rgba(190, 120, 255, 0.22);
+      --violet: #b86cff;
+      --violet2:#7a2cff;
+      --text: #f1e9ff;
+      --good:#4dff9a;
+      --bad:#ff4d6d;
+      --shadow: 0 14px 50px rgba(0,0,0,.55);
+      --glow: 0 0 14px rgba(184,108,255,.55), 0 0 30px rgba(122,44,255,.25);
+      --radius: 22px;
+      --btnRadius: 16px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow:hidden;
+    }
+
+    /* Background canvas */
+    #matrix{
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display:block;
+      background: radial-gradient(1200px 900px at 50% 20%, rgba(122,44,255,.18), transparent 55%),
+                  radial-gradient(900px 700px at 30% 70%, rgba(184,108,255,.12), transparent 60%),
+                  linear-gradient(#05010a, #07030f);
+    }
+
+    /* Foreground layout */
+    .wrap{
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding: clamp(18px, 3.2vh, 34px) 16px 24px;
+      gap: 14px;
+    }
+
+    header{
+      text-align:center;
+      margin-top: 4px;
+      user-select:none;
+    }
+    h1{
+      margin: 0;
+      font-size: clamp(26px, 4.2vh, 40px);
+      letter-spacing: .08em;
+      font-weight: 800;
+      text-shadow: var(--glow);
+    }
+    .subtitle{
+      margin-top: 6px;
+      font-size: clamp(13px, 2vh, 16px);
+      opacity: .9;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .panel{
+      margin-top: clamp(14px, 5vh, 34px);
+      width: min(92vw, 420px);
+      border-radius: var(--radius);
+      padding: 18px 16px 16px;
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      position: relative;
+      overflow:hidden;
+    }
+    .panel:before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(600px 300px at 50% -10%, rgba(184,108,255,.25), transparent 60%),
+                  radial-gradient(500px 260px at 10% 120%, rgba(122,44,255,.20), transparent 60%);
+      pointer-events:none;
+      opacity:.8;
+    }
+    .panelInner{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .displayRow{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+    .display{
+      flex:1;
+      height: 54px;
+      border-radius: 16px;
+      border: 1px solid rgba(184,108,255,.28);
+      background: rgba(0,0,0,.28);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 22px;
+      letter-spacing: .35em;
+      text-shadow: 0 0 12px rgba(184,108,255,.35);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      user-select:none;
+    }
+    .clearBtn{
+      height: 54px;
+      padding: 0 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(184,108,255,.28);
+      background: rgba(184,108,255,.14);
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing:.06em;
+      box-shadow: 0 0 0 0 rgba(184,108,255,0);
+      transition: transform .08s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+      user-select:none;
+    }
+    .clearBtn:active{ transform: translateY(1px) scale(.99); }
+
+    .status{
+      min-height: 22px;
+      font-size: 14px;
+      letter-spacing: .08em;
+      opacity: .95;
+      user-select:none;
+    }
+    .status.good{ color: var(--good); text-shadow: 0 0 10px rgba(77,255,154,.25); }
+    .status.bad{ color: var(--bad); text-shadow: 0 0 10px rgba(255,77,109,.25); }
+
+    .keypad{
+      margin-top: 2px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 420px;
+    }
+    .key{
+      border-radius: var(--btnRadius);
+      border: 1px solid rgba(184,108,255,.22);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      font-size: clamp(18px, 3.2vh, 22px);
+      font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      transition: transform .08s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+      touch-action: manipulation;
+      user-select:none;
+    }
+    .key:hover{ box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 0 12px rgba(184,108,255,.16); }
+    .key:active{
+      transform: translateY(1px) scale(.99);
+      background: rgba(184,108,255,.14);
+      box-shadow: 0 0 18px rgba(184,108,255,.22);
+    }
+
+    .keypad.disabled .key,
+    .panel.disabled .key,
+    .panel.disabled .clearBtn{
+      opacity: .45;
+      pointer-events:none;
+    }
+
+    /* Make layout comfy in landscape */
+    @media (max-height: 520px) and (orientation: landscape){
+      .wrap{ padding-top: 12px; gap: 10px; }
+      .panel{ margin-top: 8px; }
+      .keypad{ aspect-ratio: unset; grid-auto-rows: 1fr; height: min(56vh, 280px); }
+      .display{ height: 46px; }
+      .clearBtn{ height: 46px; }
+    }
+
+    /* Shake / success animations */
+    @keyframes shake {
+      0%,100%{ transform: translateX(0); }
+      20%{ transform: translateX(-10px); }
+      40%{ transform: translateX(10px); }
+      60%{ transform: translateX(-7px); }
+      80%{ transform: translateX(7px); }
+    }
+    @keyframes successPulse {
+      0%{ box-shadow: var(--shadow); }
+      40%{ box-shadow: var(--shadow), 0 0 22px rgba(77,255,154,.22), 0 0 44px rgba(184,108,255,.22); }
+      100%{ box-shadow: var(--shadow), 0 0 14px rgba(77,255,154,.10); }
+    }
+    .shake{ animation: shake .35s ease; }
+    .success{ animation: successPulse .6s ease; border-color: rgba(77,255,154,.35); }
+
+    /* Subtle vignette over matrix */
+    .vignette{
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events:none;
+      background:
+        radial-gradient(1200px 900px at 50% 35%, rgba(0,0,0,.05), rgba(0,0,0,.55) 70%),
+        linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
+      mix-blend-mode: multiply;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <div class="vignette"></div>
+
+  <main class="wrap">
+    <header>
+      <h1><b>EXPERIENCIAH</b></h1>
+      <div class="subtitle">BETTER TOGETHER</div>
+    </header>
+
+    <section class="panel" id="panel" aria-label="Panneau de saisie du code">
+      <div class="panelInner">
+        <div class="displayRow">
+          <div class="display" id="display" aria-live="polite" aria-label="Code saisi"> </div>
+          <button class="clearBtn" id="clearBtn" type="button">Effacer</button>
+        </div>
+
+        <div class="status" id="status" aria-live="polite"></div>
+
+        <div class="keypad" id="keypad" role="group" aria-label="Clavier chiffres 0 à 9">
+          <!-- 1-9 -->
+          <button class="key" type="button" data-digit="1">1</button>
+          <button class="key" type="button" data-digit="2">2</button>
+          <button class="key" type="button" data-digit="3">3</button>
+          <button class="key" type="button" data-digit="4">4</button>
+          <button class="key" type="button" data-digit="5">5</button>
+          <button class="key" type="button" data-digit="6">6</button>
+          <button class="key" type="button" data-digit="7">7</button>
+          <button class="key" type="button" data-digit="8">8</button>
+          <button class="key" type="button" data-digit="9">9</button>
+          <!-- Row with 0 centered -->
+          <button class="key" type="button" data-digit="" style="visibility:hidden"> </button>
+          <button class="key" type="button" data-digit="0">0</button>
+          <button class="key" type="button" data-digit="" style="visibility:hidden"> </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Matrix Rain (purple) =====
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    let w, h, cols, drops, fontSize;
+    const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン9876543210";
+    const charArr = chars.split("");
+
+    function resize(){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      w = canvas.width = Math.floor(window.innerWidth * dpr);
+      h = canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      fontSize = Math.max(14, Math.floor(Math.min(window.innerWidth, window.innerHeight) / 28));
+      cols = Math.floor(window.innerWidth / fontSize);
+      drops = Array.from({length: cols}, () => Math.random() * (window.innerHeight / fontSize));
+      ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
+    }
+
+    function drawMatrix(){
+      // fade
+      ctx.fillStyle = "rgba(7, 3, 15, 0.10)";
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for(let i=0; i<cols; i++){
+        const text = charArr[Math.floor(Math.random()*charArr.length)];
+        const x = i * fontSize;
+        const y = drops[i] * fontSize;
+
+        // glow head + tail
+        const head = Math.random() < 0.02;
+        if(head){
+          ctx.fillStyle = "rgba(235, 215, 255, 0.85)";
+          ctx.shadowColor = "rgba(184,108,255,0.9)";
+          ctx.shadowBlur = 18;
+        }else{
+          ctx.fillStyle = "rgba(184,108,255,0.75)";
+          ctx.shadowColor = "rgba(122,44,255,0.55)";
+          ctx.shadowBlur = 10;
+        }
+
+        ctx.fillText(text, x, y);
+
+        // reset or move
+        if(y > window.innerHeight && Math.random() > 0.975){
+          drops[i] = 0;
+        } else {
+          drops[i] += 0.9; // speed
+        }
+      }
+      // reset shadow so UI doesn't get affected
+      ctx.shadowBlur = 0;
+    }
+
+    window.addEventListener('resize', resize, {passive:true});
+    resize();
+    setInterval(drawMatrix, 42);
+
+    // ===== Code keypad logic =====
+    const EXPECTED = "980";
+    const MAXLEN = 3;
+
+    const panel = document.getElementById('panel');
+    const keypad = document.getElementById('keypad');
+    const display = document.getElementById('display');
+    const statusEl = document.getElementById('status');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let entered = "";
+    let locked = false;
+    let resetTimer = null;
+
+    function vibrate(pattern){
+      try{
+        if(navigator.vibrate) navigator.vibrate(pattern);
+      }catch(e){}
+    }
+
+    function setStatus(text, type){
+      statusEl.textContent = text || "";
+      statusEl.classList.remove('good','bad');
+      if(type) statusEl.classList.add(type);
+    }
+
+    function render(){
+      // show bullets for each digit
+      display.textContent = entered.length ? "●".repeat(entered.length) : "";
+    }
+
+    function clearAll(){
+      entered = "";
+      render();
+      setStatus("", null);
+      panel.classList.remove('shake','success');
+    }
+
+    function lockUI(){
+      locked = true;
+      panel.classList.add('disabled');
+      keypad.classList.add('disabled');
+    }
+
+    function validate(){
+      if(entered.length !== MAXLEN) return;
+
+      if(entered === EXPECTED){
+        setStatus("code bon", "good");
+        panel.classList.remove('shake');
+        panel.classList.add('success');
+        lockUI();
+        vibrate([40, 30, 40]);
+      }else{
+        setStatus("code erroné retenter", "bad");
+        panel.classList.remove('success');
+        panel.classList.add('shake');
+        vibrate([20, 40, 20]);
+        // auto reset after a short delay
+        if(resetTimer) clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+          clearAll();
+        }, 800);
+      }
+    }
+
+    keypad.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-digit]');
+      if(!btn || locked) return;
+      const d = btn.dataset.digit;
+      if(d === "") return;
+
+      if(resetTimer){
+        clearTimeout(resetTimer);
+        resetTimer = null;
+      }
+
+      if(entered.length >= MAXLEN) return;
+      entered += d;
+      render();
+
+      if(entered.length === MAXLEN) validate();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      if(locked) return;
+      if(resetTimer){
+        clearTimeout(resetTimer);
+        resetTimer = null;
+      }
+      clearAll();
+      vibrate(10);
+    });
+
+    // Init
+    render();
+  </script>
+</body>
+</html>
